@@ -2,6 +2,18 @@
 
 A Discord bot built with Oceanic.js and Prisma.
 
+## Features:
+* Bot Customizer
+* Advanced Logs
+* Welcome Module
+* Application Modules
+* Self Role Module
+* Role Request Module
+* Birthdays Module
+* Sigestions Module
+* Giveaway Module
+* Polls Module
+  
 ## Prerequisites
 
 - Node.js v16.x (this project uses older dependencies that work best with Node 16)
