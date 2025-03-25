@@ -1,0 +1,559 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("BOT_DATABASE_URL")
+}
+
+//===================================================================
+// Blacklisted Guilds
+//===================================================================
+model GuildBlacklist {
+  id      Int    @id @default(autoincrement())
+  guildID String @unique
+}
+
+//===================================================================
+// Guild General
+//===================================================================
+model GuildGeneralPanel {
+  guildID              String @id
+  logChannelID         String @default("")
+  defaultEmbedColorHex String @default("")
+  successEmbedColorHex String @default("")
+  errorEmbedColorHex   String @default("")
+  defaultEmbedColor    Int    @default(0)
+  successEmbedColor    Int    @default(0)
+  errorEmbedColor      Int    @default(0)
+}
+
+//===================================================================
+// Moderation
+//==================================================================
+model GuildModerationPanel {
+  guildID             String @id
+  modRoleIDs          String @default("")
+  embedColor          Int    @default(0)
+  logChannelID        String @default("")
+  banChannelText      String @default("")
+  banChannelImage     String @default("")
+  kickChannelText     String @default("")
+  kickChannelImage    String @default("")
+  timeoutChannelText  String @default("")
+  timeoutChannelImage String @default("")
+  warnChannelText     String @default("")
+  warnChannelImage    String @default("")
+}
+
+//===================================================================
+// Guild Warn
+//==================================================================
+model GuildWarn {
+  id           Int      @id @default(autoincrement())
+  guildID      String
+  memberID     String
+  reason       String
+  moderatorID  String
+  moderatorTag String
+  date         DateTime @default(now())
+  status       String   @default("active")
+}
+
+//===================================================================
+// Guild Support Ticket
+//===================================================================
+model GuildTicketConfig {
+  guildID           String @id
+  channelNameFormat String @default("ticket-{number}")
+}
+
+model GuildTicketPanel {
+  id             Int           @id @default(autoincrement())
+  name           String
+  guildID        String
+  logChannelID   String?
+  categoryID     String?
+  supportRoleIDs String        @default("")
+  claimRoleIDs   String        @default("")
+  pingRoleID     String?
+  questions      String?
+  emoji          String        @default("✉️")
+  btnLabel       String        @default("Create Ticket")
+  GuildTicket    GuildTicket[]
+}
+
+model GuildTicket {
+  id                Int                 @id @default(autoincrement())
+  guildID           String
+  ticketChannelID   String
+  createdMemberID   String
+  controlMessageID  String              @default("")
+  claimedMemberID   String?
+  panelID           Int
+  status            String              @default("open")
+  panel             GuildTicketPanel    @relation(fields: [panelID], references: [id], onDelete: Cascade)
+  GuildTicketMember GuildTicketMember[]
+
+  @@unique([guildID, ticketChannelID])
+  @@index([panelID], map: "GuildTicket_panelID_fkey")
+}
+
+model GuildTicketMember {
+  ticketID Int
+  memberID String
+  ticket   GuildTicket @relation(fields: [ticketID], references: [id], onDelete: Cascade)
+
+  @@id([ticketID, memberID])
+}
+
+//===================================================================
+//  Guild Applications
+//===================================================================
+model GuildApplicationPanel {
+  id                         Int                             @id @default(autoincrement())
+  name                       String
+  guildID                    String
+  createdMemberID            String
+  approveLogChannelID        String                          @default("")
+  rejectLogChannelID         String                          @default("")
+  submissionChannelID        String
+  placeholders               String                          @db.MediumText
+  acceptMessage              String?
+  rejectMessage              String?
+  acceptEmbedImage           String?
+  rejectEmbedImage           String?
+  accessRoleIDs              String
+  manageRoleIDs              String?
+  giveRoleIDs                String?
+  pingRoleID                 String?
+  emoji                      String                          @default("✉️")
+  btnLabel                   String                          @default("Apply")
+  GuildApplicationSubmission GuildApplicationSubmission[]
+  questions                  GuildApplicationPanelQuestion[]
+}
+
+model GuildApplicationPanelQuestion {
+  id          Int                   @id @default(autoincrement())
+  panelID     Int
+  panel       GuildApplicationPanel @relation(fields: [panelID], references: [id], onDelete: Cascade)
+  question    String                @db.Text
+  placeholder String?
+}
+
+model GuildApplicationSubmission {
+  id                 Int                   @id @default(autoincrement())
+  panelID            Int
+  submittedMemberID  String
+  submittedMemberTag String                @default("")
+  submittedDate      DateTime              @default(now())
+  status             String
+  threadChannelID    String?
+  panel              GuildApplicationPanel @relation(fields: [panelID], references: [id], onDelete: Cascade)
+
+  @@index([panelID], map: "GuildApplicationSubmission_panelID_fkey")
+}
+
+model GuildApplicationBlacklistedRole {
+  guildID String @id
+  roleID  String
+}
+
+//===================================================================
+//  Global Ban
+//===================================================================
+model GlobalBanList {
+  id     Int    @id @default(autoincrement())
+  userID String @unique
+}
+
+//===================================================================
+//  Custom command
+//===================================================================
+model GuildCustomCommand {
+  id        Int    @id @default(autoincrement())
+  guildID   String
+  trigger   String
+  commandID String
+  response  String @db.MediumText
+
+  @@unique([guildID, trigger])
+}
+
+//===================================================================
+//  Sticky Messages
+//===================================================================
+model GuildStickyMessage {
+  id         Int    @id @default(autoincrement())
+  name       String
+  guildID    String
+  channelIDs String
+  content    String @db.MediumText
+
+  @@unique([guildID, name])
+}
+
+model GuildStickyMessageHistory {
+  id        Int    @id @default(autoincrement())
+  guildID   String
+  name      String
+  channelID String
+  messageID String
+
+  @@unique([name, channelID, messageID])
+}
+
+//===================================================================
+//  Suggestions
+//===================================================================
+model GuildSuggestion {
+  id        Int     @id @default(autoincrement())
+  guildID   String
+  memberID  String
+  memberTag String  @default("")
+  fullIdea  String
+  messageID String
+  threadID  String?
+  status    String  @default("pending")
+}
+
+model GuildSuggestionPanel {
+  guildID             String @id
+  suggestionChannelID String
+}
+
+//===================================================================
+//  Welcome System
+//===================================================================
+model GuildWelcomePanel {
+  guildID              String  @id
+  welcomeChannelID     String  @default("")
+  embedColor           Int     @default(0)
+  embedTitle           String  @default("")
+  embedDescription     String  @default("")
+  backgroundImage      String  @default("")
+  pingMember           Boolean @default(true)
+  giveRoleIDs          String?
+  avatarCircleColor    String  @default("")
+  avatarCircleColorHex Int     @default(0)
+}
+
+//===================================================================
+//  Giveaway System
+//===================================================================
+model GuildGiveaway {
+  id                       Int                        @id @default(autoincrement())
+  guildID                  String
+  duration                 Int
+  numberOfWinners          Int                        @default(1)
+  prize                    String
+  channelID                String
+  messageID                String
+  description              String                     @default("")
+  status                   String                     @default("active")
+  createdDate              DateTime                   @default(now())
+  GuildGiveawayParticipant GuildGiveawayParticipant[]
+}
+
+model GuildGiveawayParticipant {
+  id         Int           @id @default(autoincrement())
+  giveawayID Int
+  memberID   String
+  giveaway   GuildGiveaway @relation(fields: [giveawayID], references: [id], onDelete: Cascade)
+
+  @@unique([giveawayID, memberID])
+}
+
+//===================================================================
+// Poll System
+//===================================================================
+model GuildPoll {
+  id                   Int                    @id @default(autoincrement())
+  guildID              String                 @default("")
+  title                String                 @default("")
+  description          String                 @default("")
+  color                Int                    @default(0)
+  duration             Int                    @default(5000)
+  channelID            String                 @default("")
+  messageID            String                 @default("")
+  threadID             String?
+  status               String                 @default("pending")
+  createdDate          DateTime               @default(now())
+  GuildPollChoice      GuildPollChoice[]
+  GuildPollParticipant GuildPollParticipant[]
+}
+
+model GuildPollChoice {
+  id                   Int                    @id @default(autoincrement())
+  emoji                String                 @default("")
+  name                 String                 @default("")
+  pollID               Int
+  poll                 GuildPoll              @relation(fields: [pollID], references: [id], onDelete: Cascade)
+  GuildPollParticipant GuildPollParticipant[]
+
+  @@index([pollID], map: "GuildPollChoice_pollID_fkey")
+}
+
+model GuildPollParticipant {
+  id       Int             @id @default(autoincrement())
+  pollID   Int
+  memberID String
+  choiceId Int
+  choice   GuildPollChoice @relation(fields: [choiceId], references: [id], onDelete: Cascade)
+  poll     GuildPoll       @relation(fields: [pollID], references: [id], onDelete: Cascade)
+
+  @@unique([pollID, choiceId, memberID])
+  @@index([choiceId], map: "GuildPollParticipant_choiceId_fkey")
+}
+
+//===================================================================
+// Level System
+//===================================================================
+model GuildUserLevel {
+  userId       String
+  userTag      String   @default("")
+  guildId      String
+  messageCount Int      @default(0)
+  xp           Int      @default(0)
+  level        Int      @default(0)
+  lastUpdated  DateTime @updatedAt
+
+  @@id([userId, guildId])
+}
+
+model GuildUserLevelPanel {
+  guildID        String @id
+  color          Int    @default(0)
+  alertChannelID String @default("")
+}
+
+//===================================================================
+//  Snippets
+//===================================================================
+model GuildSnippet {
+  id        Int     @id @default(autoincrement())
+  guildID   String
+  memberID  String
+  memberTag String  @default("")
+  messageID String
+  threadID  String?
+  status    String  @default("pending")
+}
+
+model GuildSnippetPanel {
+  guildID          String @id
+  snippetChannelID String
+}
+
+//===================================================================
+//  Reminders
+//===================================================================
+model GuildReminder {
+  id          Int      @id @default(autoincrement())
+  guildID     String
+  memberID    String
+  channelID   String
+  message     String
+  duration    Int
+  createdDate DateTime @default(now())
+}
+
+//===================================================================
+//  Review System
+//===================================================================
+model GuildReviewPanel {
+  guildID         String @id
+  reviewChannelID String @default("")
+  allowedRoleIDs  String @default("") //roles allowed to post reviews
+}
+
+//===================================================================
+//  Role Recovery System
+//===================================================================
+model GuildMemberCurrentRoles {
+  guildID  String
+  memberID String
+  roles    String
+
+  @@id([guildID, memberID])
+}
+
+//===================================================================
+//  Member Profile System
+//===================================================================
+model GuildMemberProfile {
+  guildID      String
+  memberID     String
+  birthday     DateTime
+  nextBirthday DateTime @default(now())
+  timezone     String
+
+  @@id([guildID, memberID])
+}
+
+//===================================================================
+//  Birthday Alert System
+//===================================================================
+model GuildBirthdayPanel {
+  guildID        String @id
+  alertChannelID String @default("")
+}
+
+//===================================================================
+//  Anti-Tagging System
+//===================================================================
+model GuildAntiTagPanel {
+  guildID          String @id
+  antiTagRoleIDs   String @default("")
+  whitelistRoleIDs String @default("")
+  antiTagMessage   String @default("{@user} {taggedUsers}")
+}
+
+//===================================================================
+//  Alt-Prevention System
+//===================================================================
+model GuildAltPreventionPanel {
+  guildID           String @id
+  minAccountAgeDays Int    @default(14)
+  dmMessage         String @default("Your account must be older than 14 days to join.")
+}
+
+//===================================================================
+//  Guild Forms
+//===================================================================
+model GuildFormPanel {
+  id                  Int                   @id @default(autoincrement())
+  name                String
+  guildID             String
+  createdMemberID     String
+  logChannelID        String
+  submissionChannelID String
+  questions           String
+  acceptMessage       String?
+  rejectMessage       String?
+  acceptEmbedImage    String?
+  rejectEmbedImage    String?
+  accessRoleIDs       String
+  manageRoleIDs       String?
+  giveRoleIDs         String?
+  pingRoleID          String?
+  emoji               String                @default("?")
+  btnLabel            String                @default("Fill")
+  GuildFromSubmission GuildFromSubmission[]
+}
+
+model GuildFromSubmission {
+  id                 Int            @id @default(autoincrement())
+  panelID            Int
+  submittedMemberID  String
+  submittedMemberTag String         @default("")
+  submittedDate      DateTime       @default(now())
+  status             String
+  threadChannelID    String?
+  panel              GuildFormPanel @relation(fields: [panelID], references: [id], onDelete: Cascade)
+
+  @@index([panelID], map: "GuildFromSubmission_panelID_fkey")
+}
+
+model GuildFormBlacklistedRole {
+  guildID String @id
+  roleID  String
+}
+
+//===================================================================
+//  Self-Role Module
+//===================================================================
+model GuildSelfRolePanel {
+  id          Int    @id @default(autoincrement())
+  name        String
+  guildID     String
+  giveRoleIDs String
+  buttonLabel String
+  buttonEmoji String
+
+  @@unique([guildID, name])
+}
+
+//===================================================================
+//  Advanced Logs Module
+//===================================================================
+model GuildAdvancedLogsPanel {
+  guildID           String @id
+  textLogChannelID  String @default("")
+  voiceLogChannelID String @default("")
+}
+
+//===================================================================
+//  Role Request Module
+//===================================================================
+model GuildRoleRequestPanel {
+  guildID          String @id
+  requestChannelID String @default("")
+  managerRoleID    String @default("")
+  approveDmMessage String @default("")
+  denyDmMessage    String @default("")
+  approveDmImage   String @default("")
+  denyDmImage      String @default("")
+  logChannelID     String @default("")
+}
+
+model GuildRoleRequest {
+  id               Int      @id @default(autoincrement())
+  requestMessageID String
+  memberId         String
+  memberTag        String
+  roleID           String
+  roleName         String
+  createdAt        DateTime @default(now())
+  status           String   @default("PENDING")
+}
+
+//===================================================================
+//  Enable/Disable Modules
+//===================================================================
+enum BotModule {
+  ROLE_RECOVERY
+}
+
+model GuildBotModule {
+  guildID String
+  module  BotModule
+  enabled Boolean   @default(false)
+
+  @@id([guildID, module])
+}
+
+//===================================================================
+//  Server Stats Module
+//===================================================================
+model GuildServerStatsPanel {
+  guildID               String @id
+  memberCountChannelID  String @default("")
+  userCountChannelID    String @default("")
+  channelCountChannelID String @default("")
+  botCountChannelID     String @default("")
+  roleCountChannelID    String @default("")
+  memberCountLabel      String @default("Member Count: {count}")
+  userCountLabel        String @default("User Count: {count}")
+  channelCountLabel     String @default("Channel Count: {count}")
+  botCountLabel         String @default("Bot Count: {count}")
+  roleCountLabel        String @default("Role Count: {count}")
+}
+
+//===================================================================
+//  Temporary voice channel module
+//===================================================================
+model GuildTempVoiceChannelPanel {
+  guildID          String @id
+  triggerChannelID String @default("")
+  vcCategoryID     String @default("")
+}
+
+model GuildTempVoiceChannel {
+  id        Int    @id @default(autoincrement())
+  guildID   String
+  channelID String
+
+  @@unique([guildID, channelID])
+}
