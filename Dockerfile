@@ -1,16 +1,18 @@
 FROM node:16.18-alpine
 
-WORKDIR /usr/src/app
-
+# install build tools + OpenSSL‑1.1 compatibility
 RUN apk add --no-cache \
-    build-base \
-    g++ \
-    cairo-dev \
-    jpeg-dev \
-    pango-dev \
-    imagemagick \
-    giflib-dev \
-    librsvg-dev
+      build-base \
+      g++ \
+      cairo-dev \
+      jpeg-dev \
+      pango-dev \
+      imagemagick \
+      giflib-dev \
+      librsvg-dev \
+      openssl1.1-compat
+
+WORKDIR /usr/src/app
 
 COPY package*.json ./
 
