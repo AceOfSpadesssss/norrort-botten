@@ -141,12 +141,12 @@ export class CustomClient extends Client {
 
     if (PRODUCTION) {
       await this.application
-        .bulkEditGuildCommands(TEST_GUILD_ID, [])
+        .bulkEditGuildCommands(TEST_GUILD_ID!, [])
         .catch((_) => {});
       await this.application.bulkEditGlobalCommands(commands);
     } else {
       await this.application.bulkEditGuildCommands(
-        TEST_GUILD_ID,
+        TEST_GUILD_ID!,
         commands
       );
       await this.application.bulkEditGlobalCommands([]).catch((_) => {});
@@ -174,7 +174,7 @@ export class CustomClient extends Client {
 
     if (!PRODUCTION) {
       devServerName =
-        this.guilds.get(TEST_GUILD_ID)?.name || "unknown";
+        this.guilds.get(TEST_GUILD_ID!)?.name || "unknown";
     }
 
     this.logger.info(
